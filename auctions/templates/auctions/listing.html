@@ -1,0 +1,109 @@
+{% extends "auctions/layout.html" %}
+
+{% block title %}
+    Listing
+{% endblock %}
+
+{% block body %}
+    <h1>{{ listing.title }}</h1>
+	
+	<!-- Only show photo is it exists in the field -->
+	{% if listing.photo != "" %}
+	<div>
+		<img class = "container-sm border" style = "max-width:400px" src={{ listing.photo }}>
+	</div>
+	{% endif %}
+	
+	<div class = "caption">
+		{{ listing.description }}
+	</div>
+	
+	<div id="starting_price">
+		Starting Price: ${{ listing.starting_bid}}
+	</div>
+
+	<div class = "price">
+		Current Price: ${{ listing.current_price }}
+	</div>
+
+	<!-- Check if user is authenticated and listing is still active -->
+	{% if user.is_authenticated and listing.active  %}
+		<div id="bid_info">
+			{{ bid_count }} bid(s) so far.  Your current bid is:
+		</div>
+		
+		<form action="{% url 'bid' listing.id %}" method="post">
+			{% csrf_token %}
+			<div style="padding-bottom:10px; padding-top:3px">
+			{{ form.bid }}
+			</div>
+				<input class="btn btn-primary" type="submit" value="Place Bid">	
+		</form>
+		
+		{% if listing.user == user %}
+				<form action="{% url 'closeauction' listing.id %}" method="post">
+					{% csrf_token %}
+					<input class="btn btn-secondary" type="submit" value="End Auction">
+				</form>
+		{% endif %}
+	
+	{% endif %}
+	
+	{% if user.is_authenticated %}
+		<form action="{% url 'watch' listing.id %}" method="post">
+			{% csrf_token %}
+				{% if watch %}
+					<input class="btn btn-primary" type="submit" value="Unwatch">	
+				{% else %}
+					<input class="btn btn-primary" type="submit" value="Watch">	
+				{% endif %}
+		</form>
+	{% endif %}
+	
+	<br>
+	<!-- Check if listing has ended -->
+	{% if not listing.active %}
+		<div style="font-size:30px">
+			This listing has already ended.
+		</div>
+		<div style="font-size:45px; font-weight:bold; color:blue" >
+			<!-- If winner logged in, show they are the winner -->
+			{% if bid_count > 0 and user == highest_bidder %}
+				Congratulations! You are the winner!
+			{% endif %}
+		</div>
+	{% endif %}
+
+	
+	<h3 style="padding-top:30px">Details </h3>
+	<div>
+		<ul class="list-group">
+			<li class="list-group-item">Listed by: 	{{ listing.user }}</li>
+			<li class="list-group-item">Category: 	{{ listing.category }}</li>
+		</ul>
+	</div>
+	
+	<h3 style="padding-top:30px">Comments </h3>
+	{% for comment in comments %}
+		<div>
+			<ul class="list-group">
+				<li class="list-group-item">{{ comment.comment }}</li>
+			</ul>
+		</div>
+	{% endfor %}
+	
+	<div style="padding-top:40px">
+		{% if user.is_authenticated %}
+			<form action="{% url 'comment' listing.id %}" method="post">
+				{% csrf_token %}
+				
+				{{ comment_form.comment }}
+
+				<br>
+				<input class="btn btn-primary" type="submit" value="Post Comment">
+			</form>
+		{% endif %}
+	</div>
+
+
+{% endblock %}
